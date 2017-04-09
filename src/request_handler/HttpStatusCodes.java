@@ -1,3 +1,4 @@
+package request_handler;
 
 public class HttpStatusCodes {
 	public static final String STATUS_SUCCESS = "200 OK";

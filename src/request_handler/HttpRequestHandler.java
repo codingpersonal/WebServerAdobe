@@ -1,3 +1,4 @@
+package request_handler;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
@@ -8,10 +9,11 @@ import java.io.PrintWriter;
 import java.net.Socket;
 import java.util.HashMap;
 
-public class HttpRequest implements Runnable {
+import request_handler.factory.IRequestHandlerFactory;
+
+public class HttpRequestHandler implements IServerRequestHandler {
 
 	Socket socket;
-	Server server;
 	HttpResponse response;
 
 	// stores the http method
@@ -24,7 +26,7 @@ public class HttpRequest implements Runnable {
 	// it will store the http request header params after parsing
 	HashMap<String, String> headerParams = new HashMap<>();
 
-	public HttpRequest(Socket socket) {
+	public HttpRequestHandler(Socket socket) {
 		this.socket = socket;
 	}
 
