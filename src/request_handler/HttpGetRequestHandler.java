@@ -8,7 +8,7 @@ import java.util.HashMap;
 
 import utils.HttpConstants;
 
-public class HttpRequestHandler implements IServerRequestHandler {
+public class HttpGetRequestHandler implements IServerRequestHandler {
 
 	// this method will be called from run to process the request
 	public ServerResponse processRequest(ServerRequest inRequest)
