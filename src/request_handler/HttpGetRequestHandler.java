@@ -15,10 +15,12 @@ public class HttpGetRequestHandler implements IServerRequestHandler {
 	// this method will be called from run to process the request
 	public ServerResponse processRequest(ServerRequest inRequest)
 			throws IOException {
+		
 		// if the request is valid, send the response back
 		File outFile = new File(HttpConstants.RESOURCE_DIR
 				+ inRequest.getRequest_uri());
 		ServerResponse response = formHttpResponse(outFile);
+		
 		return response;
 	}
 
@@ -30,6 +32,7 @@ public class HttpGetRequestHandler implements IServerRequestHandler {
 			WebServerLogger.logErrorMsg(HttpStatusCodes.STATUS_400);
 			String errorMsg = HttpHelper
 					.formHtmlFromErrorMsg("Bad Protocol Request, Either Version or the Method not supported");
+		
 			return HttpHelper.formHttpErrorResponse(response, errorMsg,
 					HttpStatusCodes.STATUS_400);
 
@@ -37,10 +40,12 @@ public class HttpGetRequestHandler implements IServerRequestHandler {
 			if (outFile.isFile()) {
 				response.setStatusCode(HttpStatusCodes.STATUS_SUCCESS);
 				return sendHttpSuccessResponseWithFile(response, outFile);
+				
 			} else {
 				WebServerLogger.logErrorMsg(HttpStatusCodes.STATUS_404);
-				String msgStr = "File " + outFile + " not found";
+				String msgStr = "File " + outFile.getName() + " not found";
 				String errorMsg = HttpHelper.formHtmlFromErrorMsg(msgStr);
+				
 				return HttpHelper.formHttpErrorResponse(response, errorMsg,
 						HttpStatusCodes.STATUS_404);
 			}
@@ -62,6 +67,7 @@ public class HttpGetRequestHandler implements IServerRequestHandler {
 
 			// set the content type based on the file extension
 			String contentType = "";
+			
 			if (fileName.endsWith(".htm") || fileName.endsWith(".html")) {
 				contentType = HttpConstants.HTML;
 			} else if (fileName.endsWith(".txt")) {
@@ -72,6 +78,7 @@ public class HttpGetRequestHandler implements IServerRequestHandler {
 				response = HttpHelper.formHttpErrorResponse(response, errorMsg,
 						HttpStatusCodes.STATUS_415);
 				reader.close();
+			
 				return response;
 			}
 

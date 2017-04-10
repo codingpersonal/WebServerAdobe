@@ -39,9 +39,7 @@ public class ServerWorker implements Runnable {
 			// parse input request. This will create a ServerRequest object
 			ServerRequest inRequest = RequestParser.parseRequest(inp);
 			String errorMsg = inRequest.getErrorMsg();
-			if (errorMsg == null
-					|| errorMsg.length() > 0) {
-				
+			if (errorMsg != null && errorMsg.length() > 0) {
 				String msgContents[] = errorMsg.split(" ");
 				outResponse = HttpHelper.formHttpErrorResponse(outResponse,
 						HttpHelper.formHtmlFromErrorMsg(msgContents[1]),

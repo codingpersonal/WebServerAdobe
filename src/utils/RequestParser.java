@@ -23,22 +23,26 @@ public class RequestParser {
 
 			// read the first request line
 			String requestLine = br.readLine();
+			WebServerLogger.logInfo("Request received:" + requestLine);
+
 			String requestLineContents[] = requestLine.split(" ");
-			
-			if (requestLineContents.length != 3) {
+
+			if (requestLineContents.length != 3
+					|| requestLineContents[1].length() <= 1) {
 				// send 404 bad request in the response
-				WebServerLogger.logErrorMsg(HttpStatusCodes.STATUS_404);
-				ret.setErrorMsg(HttpStatusCodes.STATUS_404);
-				
+				WebServerLogger.logErrorMsg(HttpStatusCodes.STATUS_400);
+				ret.setErrorMsg(HttpStatusCodes.STATUS_400);
+
 			} else {
 				ret.setMethod(requestLineContents[0]);
 				ret.setRequest_uri(requestLineContents[1]);
 				ret.setHttp_version(requestLineContents[2]);
 
 				// proceed only if the valid values are received in the request
-				if (!ret.getHttp_version().startsWith(HttpConstants.HTTP_Protocol_Version)) {
-					
-					//send 505 protocol version not supported in response
+				if (!ret.getHttp_version().startsWith(
+						HttpConstants.HTTP_Protocol_Version)) {
+
+					// send 505 protocol version not supported in response
 					WebServerLogger.logErrorMsg(HttpStatusCodes.STATUS_505);
 					ret.setErrorMsg(HttpStatusCodes.STATUS_505);
 				}
@@ -46,7 +50,7 @@ public class RequestParser {
 
 			// read the headers now in the next lines.
 			String headerLine = null;
-			
+
 			while ((headerLine = br.readLine()).length() != 0) {
 				String Parampair[] = headerLine.split(":");
 				ret.getHeaderParams().put(Parampair[0], Parampair[1]);
@@ -55,7 +59,7 @@ public class RequestParser {
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
-		
+
 		return ret;
 	}
 }
