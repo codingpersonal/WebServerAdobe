@@ -1,14 +1,8 @@
 package request_handler;
 
-import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.OutputStream;
-import java.io.PrintWriter;
-import java.net.Socket;
 import java.util.Date;
 import java.util.HashMap;
 
@@ -19,16 +13,11 @@ public class HttpRequestHandler implements IServerRequestHandler {
 	// this method will be called from run to process the request
 	public ServerResponse processRequest(ServerRequest inRequest)
 			throws IOException {
-		try {
-			// if the request is valid, send the response back
-			File outFile = new File(HttpConstants.RESOURCE_DIR
-					+ inRequest.request_uri);
-			ServerResponse response = new ServerResponse(outFile);
-		}
-
-		catch (IOException e) {
-			System.err.println("IOException caught" + e);
-		}
+		// if the request is valid, send the response back
+		File outFile = new File(HttpConstants.RESOURCE_DIR
+				+ inRequest.request_uri);
+		ServerResponse response = formHttpResponse(outFile);
+		return response;
 	}
 
 	/* This function will form the http response - error or success */

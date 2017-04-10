@@ -6,8 +6,6 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
-import request_handler.IServerRequestHandler;
-
 public class Server implements Runnable {
 
 	private ServerSocket serverSocket;

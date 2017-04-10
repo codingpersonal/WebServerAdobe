@@ -12,7 +12,6 @@ import request_handler.IServerRequestHandler;
 import request_handler.ServerRequest;
 import request_handler.ServerResponse;
 import request_handler.factory.IRequestHandlerFactory;
-import utils.HttpConstants;
 import utils.RequestParser;
 
 // This class does the job of processing request from socket and operating on them
