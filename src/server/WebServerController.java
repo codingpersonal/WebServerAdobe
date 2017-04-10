@@ -20,8 +20,8 @@ public class WebServerController {
 
 		//1. To start http server 
 		ServerConfigurations httpServerConfig = new ServerConfigurations();
-		httpServerConfig.serverPort = HttpConstants.HTTP_SERVER_PORT;
-		httpServerConfig.maxThreadCount = HttpConstants.MAX_THREAD;
+		httpServerConfig.setServerPort(HttpConstants.HTTP_SERVER_PORT);
+		httpServerConfig.setMaxThreadCount(HttpConstants.MAX_THREAD);
 		httpServerConfig.handlerFactory = new HttpRequestHandlerFactory();
 		new Thread(new Server(httpServerConfig)).start();
 	}

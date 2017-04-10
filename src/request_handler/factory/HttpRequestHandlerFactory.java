@@ -7,7 +7,7 @@ import utils.HttpConstants;
 
 public class HttpRequestHandlerFactory implements IRequestHandlerFactory {
 	public IServerRequestHandler createRequestHandler(ServerRequest inRequest) {
-		String httpMethod = inRequest.method;
+		String httpMethod = inRequest.getMethod();
 		
 		if(httpMethod.equals(HttpConstants.HTTP_GET)) {
 			return new HttpGetRequestHandler();

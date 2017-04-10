@@ -20,17 +20,17 @@ public class Server implements Runnable {
 	public void run() {
 		try {
 			//keeping the port as 8080 
-			serverSocket = new ServerSocket(this.serverConfig.serverPort);
+			serverSocket = new ServerSocket(this.serverConfig.getServerPort());
 			
 			//keeping a max count of 10 threads
-			threadPoolSvc = Executors.newFixedThreadPool(this.serverConfig.maxThreadCount);
+			threadPoolSvc = Executors.newFixedThreadPool(this.serverConfig.getMaxThreadCount());
 		} catch (IOException e) {
-			System.err.println("Cannot listen on port " + this.serverConfig.serverPort);
+			System.err.println("Cannot listen on port " + this.serverConfig.getServerPort());
 			e.printStackTrace();
-			System.exit(10);			// some exception. ideally, it should exit gracefully
+			System.exit(10);			
 		}
 		
-		System.out.println("Server Listening on port: "+ this.serverConfig.serverPort);
+		System.out.println("Server Listening on port: "+ this.serverConfig.getServerPort());
 		
 		//Loop until the main thread is not interupted
 		while (!Thread.interrupted()) {

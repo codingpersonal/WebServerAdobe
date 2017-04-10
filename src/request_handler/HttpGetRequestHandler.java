@@ -3,10 +3,13 @@ package request_handler;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.rmi.ServerException;
 import java.util.Date;
 import java.util.HashMap;
 
+import error_handling.ServerRequestException;
 import utils.HttpConstants;
+import utils.HttpStatusCodes;
 
 public class HttpGetRequestHandler implements IServerRequestHandler {
 
@@ -15,7 +18,7 @@ public class HttpGetRequestHandler implements IServerRequestHandler {
 			throws IOException {
 		// if the request is valid, send the response back
 		File outFile = new File(HttpConstants.RESOURCE_DIR
-				+ inRequest.request_uri);
+				+ inRequest.getRequest_uri());
 		ServerResponse response = formHttpResponse(outFile);
 		return response;
 	}
@@ -34,7 +37,11 @@ public class HttpGetRequestHandler implements IServerRequestHandler {
 		} else {
 			if (outFile.isFile()) {
 				response.setStatusCode(HttpStatusCodes.STATUS_SUCCESS);
-				return sendHttpSuccessResponseWithFile(response, outFile);
+				try {
+					return sendHttpSuccessResponseWithFile(response, outFile);
+				} catch (ServerRequestException e) {
+					e.printStackTrace();
+				}
 			} else {
 				System.err.println("Invalid File name or location");
 				String errorStr = "<html><body>File " + outFile
@@ -43,6 +50,7 @@ public class HttpGetRequestHandler implements IServerRequestHandler {
 				return sendHttpErrorResponse(response, errorStr);
 			}
 		}
+		return null;
 	}
 
 	/*
@@ -72,38 +80,44 @@ public class HttpGetRequestHandler implements IServerRequestHandler {
 		return responseHeaders;
 	}
 
-	/*Function which will form the response headers and body in case of an success.
-	 * The contents of the outFile passed as a parameter will be the body of the response*/
-	private ServerResponse sendHttpSuccessResponseWithFile(ServerResponse response, File outFile) {
+	/*
+	 * Function which will form the response headers and body in case of an
+	 * success. The contents of the outFile passed as a parameter will be the
+	 * body of the response
+	 */
+	private ServerResponse sendHttpSuccessResponseWithFile(
+			ServerResponse response, File outFile) throws ServerRequestException {
 		try {
 			FileInputStream reader = new FileInputStream(outFile);
 			int contentLength = reader.available();
-			
-			//set the content type based on the file extension
+
+			// set the content type based on the file extension
 			String contentType = "";
-			if (outFile.getName().endsWith(".htm") || outFile.getName().endsWith(".html")) {
+			if (outFile.getName().endsWith(".htm")
+					|| outFile.getName().endsWith(".html")) {
 				contentType = HttpConstants.HTML;
 			} else {
 				contentType = HttpConstants.TEXT;
 			}
-			
-			//fill the response headers.
+
+			// fill the response headers.
 			HashMap<String, String> responseHeaders = fillResponseHeader(
 					contentLength, contentType);
 			response.setResponseHeaders(responseHeaders);
-			
+
 			// read the contents of the file in the body
 			byte[] body = new byte[contentLength];
 			reader.read(body);
-			
-			//set the body as well
+
+			// set the body as well
 			response.setBody(body);
-			
+
 			reader.close();
 		} catch (IOException e) {
 			System.err.println("Exception caught while reading from file" + e);
+			throw new ServerRequestException(-1, "Error while reading from file");
 		}
-		
+
 		return response;
 	}
 

@@ -1,3 +1,7 @@
+/**
+ * This class parses the request and creates the ServerReuest object.
+ * For now, it is parsing the HTTP request.
+ */
 package utils;
 
 import java.io.BufferedReader;
@@ -20,17 +24,17 @@ public class RequestParser {
 			String requestLine = br.readLine();
 			String requestLineContents[] = requestLine.split(" ");
 			if (requestLineContents.length != 3) {
-				throw new ServerRequestException(-1,
-						"Invalid Request Received, Less than 3 request lines received.");
+				throw new ServerRequestException(400,
+						"Bad Request, Less than 3 request lines received.");
 			} else {
-				ret.method = requestLineContents[0];
-				ret.request_uri = requestLineContents[1];
-				ret.http_version = requestLineContents[2];
+				ret.setMethod(requestLineContents[0]);
+				ret.setRequest_uri(requestLineContents[1]);
+				ret.setHttp_version(requestLineContents[2]);
 
 				// proceed only if the valid values are received in the request
-				if (!ret.http_version.startsWith(HttpConstants.HTTP_Protocol_Version)) {
-					throw new ServerRequestException(-1,
-							"Invalid Http Version, Version should be 1.1");
+				if (!ret.getHttp_version().startsWith(HttpConstants.HTTP_Protocol_Version)) {
+					throw new ServerRequestException(505,
+							"Http Version not supported, Version should be 1.1");
 				}
 			}
 
@@ -38,7 +42,7 @@ public class RequestParser {
 			String headerLine = null;
 			while ((headerLine = br.readLine()).length() != 0) {
 				String Parampair[] = headerLine.split(":");
-				ret.headerParams.put(Parampair[0], Parampair[1]);
+				ret.getHeaderParams().put(Parampair[0], Parampair[1]);
 			}
 
 		} catch (IOException e) {

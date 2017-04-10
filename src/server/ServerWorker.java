@@ -8,6 +8,7 @@ import java.net.Socket;
 import java.util.HashMap;
 import java.util.Map.Entry;
 
+import error_handling.ServerRequestException;
 import request_handler.IServerRequestHandler;
 import request_handler.ServerRequest;
 import request_handler.ServerResponse;
@@ -15,6 +16,7 @@ import request_handler.factory.IRequestHandlerFactory;
 import utils.RequestParser;
 
 // This class does the job of processing request from socket and operating on them
+// This class acts as a bridge and reads and writes the request and response from socket
 public class ServerWorker implements Runnable {
 
 	private IRequestHandlerFactory reqHandlerFactory;
@@ -28,8 +30,6 @@ public class ServerWorker implements Runnable {
 	@Override
 	public void run() {
 		try {
-			// get input request
-
 			// obtain the input and output stream of the socket
 			InputStream inp = socket.getInputStream();
 			OutputStream op = socket.getOutputStream();
@@ -43,6 +43,9 @@ public class ServerWorker implements Runnable {
 
 			// get response string from handler
 			ServerResponse outResponse = reqHandler.processRequest(inRequest);
+			if(outResponse == null) {
+				throw new ServerRequestException(-1, "Invalid server response");
+			}
 
 			// convert the object to string format
 			String strResponse = formHttpResponse(outResponse);
@@ -69,6 +72,7 @@ public class ServerWorker implements Runnable {
 	}
 	
 	//convert the http response from obj to string
+	//A string response is needed to write on the output stream
 	private static String formHttpResponse(ServerResponse outResponse) {
 		byte[] body = outResponse.getBody();
 		HashMap<String, String>responseHeaders = outResponse.getResponseHeaders();
