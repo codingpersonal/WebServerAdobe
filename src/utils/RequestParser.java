@@ -10,6 +10,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 
 import error_handling.ServerRequestException;
+import error_handling.WebServerLogger;
 import request_handler.ServerRequest;
 
 public class RequestParser {
@@ -23,9 +24,12 @@ public class RequestParser {
 			// read the first request line
 			String requestLine = br.readLine();
 			String requestLineContents[] = requestLine.split(" ");
+			
 			if (requestLineContents.length != 3) {
-				throw new ServerRequestException(400,
-						"Bad Request, Less than 3 request lines received.");
+				// send 404 bad request in the response
+				WebServerLogger.logErrorMsg(HttpStatusCodes.STATUS_404);
+				ret.setErrorMsg(HttpStatusCodes.STATUS_404);
+				
 			} else {
 				ret.setMethod(requestLineContents[0]);
 				ret.setRequest_uri(requestLineContents[1]);
@@ -33,13 +37,16 @@ public class RequestParser {
 
 				// proceed only if the valid values are received in the request
 				if (!ret.getHttp_version().startsWith(HttpConstants.HTTP_Protocol_Version)) {
-					throw new ServerRequestException(505,
-							"Http Version not supported, Version should be 1.1");
+					
+					//send 505 protocol version not supported in response
+					WebServerLogger.logErrorMsg(HttpStatusCodes.STATUS_505);
+					ret.setErrorMsg(HttpStatusCodes.STATUS_505);
 				}
 			}
 
 			// read the headers now in the next lines.
 			String headerLine = null;
+			
 			while ((headerLine = br.readLine()).length() != 0) {
 				String Parampair[] = headerLine.split(":");
 				ret.getHeaderParams().put(Parampair[0], Parampair[1]);
@@ -47,8 +54,8 @@ public class RequestParser {
 
 		} catch (IOException e) {
 			e.printStackTrace();
-			throw new ServerRequestException(-1, e.getMessage());
 		}
+		
 		return ret;
 	}
 }

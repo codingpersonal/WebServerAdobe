@@ -3,12 +3,11 @@ package request_handler;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
-import java.rmi.ServerException;
-import java.util.Date;
 import java.util.HashMap;
 
-import error_handling.ServerRequestException;
+import error_handling.WebServerLogger;
 import utils.HttpConstants;
+import utils.HttpHelper;
 import utils.HttpStatusCodes;
 
 public class HttpGetRequestHandler implements IServerRequestHandler {
@@ -27,57 +26,25 @@ public class HttpGetRequestHandler implements IServerRequestHandler {
 	public ServerResponse formHttpResponse(File outFile) {
 		ServerResponse response = new ServerResponse();
 
-		response.setProtocolVersion(HttpConstants.HTTP_Protocol_Version);
 		if (outFile == null) {
-			System.err
-					.println("Invalid HttpRequest, sending back error response");
-			String errorStr = "<html><body> Bad Protocol Request, Either Version or the Method not supported </body></html>";
-			response.setStatusCode(HttpStatusCodes.STATUS_400);
-			return sendHttpErrorResponse(response, errorStr);
+			WebServerLogger.logErrorMsg(HttpStatusCodes.STATUS_400);
+			String errorMsg = HttpHelper
+					.formHtmlFromErrorMsg("Bad Protocol Request, Either Version or the Method not supported");
+			return HttpHelper.formHttpErrorResponse(response, errorMsg,
+					HttpStatusCodes.STATUS_400);
+
 		} else {
 			if (outFile.isFile()) {
 				response.setStatusCode(HttpStatusCodes.STATUS_SUCCESS);
-				try {
-					return sendHttpSuccessResponseWithFile(response, outFile);
-				} catch (ServerRequestException e) {
-					e.printStackTrace();
-				}
+				return sendHttpSuccessResponseWithFile(response, outFile);
 			} else {
-				System.err.println("Invalid File name or location");
-				String errorStr = "<html><body>File " + outFile
-						+ " not found.</body></html>";
-				response.setStatusCode(HttpStatusCodes.STATUS_404);
-				return sendHttpErrorResponse(response, errorStr);
+				WebServerLogger.logErrorMsg(HttpStatusCodes.STATUS_404);
+				String msgStr = "File " + outFile + " not found";
+				String errorMsg = HttpHelper.formHtmlFromErrorMsg(msgStr);
+				return HttpHelper.formHttpErrorResponse(response, errorMsg,
+						HttpStatusCodes.STATUS_404);
 			}
 		}
-		return null;
-	}
-
-	/*
-	 * Function which will form the response headers and body in case of an
-	 * error. ErrorStr passed as a param will become the error message or body
-	 * of the response
-	 */
-	private ServerResponse sendHttpErrorResponse(ServerResponse outResponse,
-			String errorStr) {
-		HashMap<String, String> responseHeaders = fillResponseHeader(
-				errorStr.getBytes().length, HttpConstants.HTML);
-		outResponse.setResponseHeaders(responseHeaders);
-		outResponse.setBody(errorStr.getBytes());
-
-		return outResponse;
-	}
-
-	/* Function to set the Date header in the header response map */
-	public HashMap<String, String> fillResponseHeader(long contentLength,
-			String contentType) {
-		HashMap<String, String> responseHeaders = new HashMap<>();
-
-		responseHeaders.put("Date", new Date().toString());
-		responseHeaders.put("Content-Length", String.valueOf(contentLength));
-		responseHeaders.put("Content-Type", contentType);
-
-		return responseHeaders;
 	}
 
 	/*
@@ -86,23 +53,31 @@ public class HttpGetRequestHandler implements IServerRequestHandler {
 	 * body of the response
 	 */
 	private ServerResponse sendHttpSuccessResponseWithFile(
-			ServerResponse response, File outFile) throws ServerRequestException {
+			ServerResponse response, File outFile) {
 		try {
 			FileInputStream reader = new FileInputStream(outFile);
+
 			int contentLength = reader.available();
+			String fileName = outFile.getName();
 
 			// set the content type based on the file extension
 			String contentType = "";
-			if (outFile.getName().endsWith(".htm")
-					|| outFile.getName().endsWith(".html")) {
+			if (fileName.endsWith(".htm") || fileName.endsWith(".html")) {
 				contentType = HttpConstants.HTML;
-			} else {
+			} else if (fileName.endsWith(".txt")) {
 				contentType = HttpConstants.TEXT;
+			} else {
+				String errorMsg = HttpHelper
+						.formHtmlFromErrorMsg("File extension is not supported.");
+				response = HttpHelper.formHttpErrorResponse(response, errorMsg,
+						HttpStatusCodes.STATUS_415);
+				reader.close();
+				return response;
 			}
 
 			// fill the response headers.
-			HashMap<String, String> responseHeaders = fillResponseHeader(
-					contentLength, contentType);
+			HashMap<String, String> responseHeaders = HttpHelper
+					.fillResponseHeader(contentLength, contentType);
 			response.setResponseHeaders(responseHeaders);
 
 			// read the contents of the file in the body
@@ -111,11 +86,13 @@ public class HttpGetRequestHandler implements IServerRequestHandler {
 
 			// set the body as well
 			response.setBody(body);
+			response.setProtocolVersion(HttpConstants.HTTP_Protocol_Version);
 
 			reader.close();
+
 		} catch (IOException e) {
-			System.err.println("Exception caught while reading from file" + e);
-			throw new ServerRequestException(-1, "Error while reading from file");
+			WebServerLogger
+					.logErrorMsg("Exception caught while reading from file" + e);
 		}
 
 		return response;

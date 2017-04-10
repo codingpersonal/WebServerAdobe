@@ -11,4 +11,8 @@ public class WebServerLogger {
 			System.err.println("Error Msg:" + ex.errMsg);
 		}
 	}
+	
+	public static void logErrorMsg(String errMsg) {
+		System.err.println("Error Msg:"+errMsg);
+	}
 }

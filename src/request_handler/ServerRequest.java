@@ -6,6 +6,7 @@ public class ServerRequest {
 	private String method;
 	private String request_uri;
 	private String http_version;
+	private String errorMsg;
 
 	// it will store the http request header params after parsing
 	private HashMap<String, String> headerParams = new HashMap<>();
@@ -40,6 +41,14 @@ public class ServerRequest {
 
 	public void setHeaderParams(HashMap<String, String> headerParams) {
 		this.headerParams = headerParams;
+	}
+
+	public String getErrorMsg() {
+		return errorMsg;
+	}
+
+	public void setErrorMsg(String errorMsg) {
+		this.errorMsg = errorMsg;
 	}
 
 }

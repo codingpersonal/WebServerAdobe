@@ -8,11 +8,11 @@ import java.net.Socket;
 import java.util.HashMap;
 import java.util.Map.Entry;
 
-import error_handling.ServerRequestException;
 import request_handler.IServerRequestHandler;
 import request_handler.ServerRequest;
 import request_handler.ServerResponse;
 import request_handler.factory.IRequestHandlerFactory;
+import utils.HttpHelper;
 import utils.RequestParser;
 
 // This class does the job of processing request from socket and operating on them
@@ -30,35 +30,45 @@ public class ServerWorker implements Runnable {
 	@Override
 	public void run() {
 		try {
+			ServerResponse outResponse = new ServerResponse();
+
 			// obtain the input and output stream of the socket
 			InputStream inp = socket.getInputStream();
 			OutputStream op = socket.getOutputStream();
 
 			// parse input request. This will create a ServerRequest object
 			ServerRequest inRequest = RequestParser.parseRequest(inp);
+			String errorMsg = inRequest.getErrorMsg();
+			if (errorMsg == null
+					|| errorMsg.length() > 0) {
+				
+				String msgContents[] = errorMsg.split(" ");
+				outResponse = HttpHelper.formHttpErrorResponse(outResponse,
+						HttpHelper.formHtmlFromErrorMsg(msgContents[1]),
+						msgContents[0]);
 
-			// ask factory to create required handler
-			IServerRequestHandler reqHandler = this.reqHandlerFactory
-					.createRequestHandler(inRequest);
+			} else {
 
-			// get response string from handler
-			ServerResponse outResponse = reqHandler.processRequest(inRequest);
-			if(outResponse == null) {
-				throw new ServerRequestException(-1, "Invalid server response");
+				// ask factory to create required handler
+				IServerRequestHandler reqHandler = this.reqHandlerFactory
+						.createRequestHandler(inRequest);
+
+				// get response string from handler
+				outResponse = reqHandler.processRequest(inRequest);
 			}
 
 			// convert the object to string format
 			String strResponse = formHttpResponse(outResponse);
-			
-			//write back to socket
+
+			// write back to socket
 			PrintWriter writer = new PrintWriter(op);
 			writer.write(strResponse);
 			writer.flush();
-			
-			//close the input and output socket
+
+			// close the input and output socket
 			inp.close();
 			op.close();
-			
+
 		} catch (Exception e) {
 			e.printStackTrace();
 		} finally {
@@ -70,14 +80,16 @@ public class ServerWorker implements Runnable {
 		}
 
 	}
-	
-	//convert the http response from obj to string
-	//A string response is needed to write on the output stream
+
+	// convert the http response from obj to string
+	// A string response is needed to write on the output stream
 	private static String formHttpResponse(ServerResponse outResponse) {
 		byte[] body = outResponse.getBody();
-		HashMap<String, String>responseHeaders = outResponse.getResponseHeaders();
-		
-		String responseStr = outResponse.getProtocolVersion() + " " + outResponse.getStatusCode() +"\n";
+		HashMap<String, String> responseHeaders = outResponse
+				.getResponseHeaders();
+
+		String responseStr = outResponse.getProtocolVersion() + " "
+				+ outResponse.getStatusCode() + "\n";
 		for (Entry<String, String> key : (responseHeaders).entrySet()) {
 			responseStr += key.getKey() + ": " + key.getValue() + "\n";
 		}
