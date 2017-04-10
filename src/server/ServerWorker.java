@@ -75,7 +75,7 @@ public class ServerWorker implements Runnable {
 		
 		String responseStr = outResponse.getProtocolVersion() + " " + outResponse.getStatusCode() +"\n";
 		for (Entry<String, String> key : (responseHeaders).entrySet()) {
-			responseStr += key + ": " + responseHeaders.get(key) + "\n";
+			responseStr += key.getKey() + ": " + key.getValue() + "\n";
 		}
 		responseStr += "\r\n";
 		if (body != null) {

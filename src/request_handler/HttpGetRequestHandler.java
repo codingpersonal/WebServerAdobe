@@ -24,6 +24,7 @@ public class HttpGetRequestHandler implements IServerRequestHandler {
 	public ServerResponse formHttpResponse(File outFile) {
 		ServerResponse response = new ServerResponse();
 
+		response.setProtocolVersion(HttpConstants.HTTP_Protocol_Version);
 		if (outFile == null) {
 			System.err
 					.println("Invalid HttpRequest, sending back error response");
@@ -41,7 +42,6 @@ public class HttpGetRequestHandler implements IServerRequestHandler {
 				response.setStatusCode(HttpStatusCodes.STATUS_404);
 				return sendHttpErrorResponse(response, errorStr);
 			}
-
 		}
 	}
 
