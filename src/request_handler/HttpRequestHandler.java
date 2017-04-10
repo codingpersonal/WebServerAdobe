@@ -1,155 +1,121 @@
 package request_handler;
+
 import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.net.Socket;
+import java.util.Date;
 import java.util.HashMap;
 
-import request_handler.factory.IRequestHandlerFactory;
+import utils.HttpConstants;
 
 public class HttpRequestHandler implements IServerRequestHandler {
 
-	Socket socket;
-	HttpResponse response;
-
-	// stores the http method
-	private String method;
-
-	// request uri in the request sent by the client
-	private String request_uri;
-	private String http_version;
-
-	// it will store the http request header params after parsing
-	HashMap<String, String> headerParams = new HashMap<>();
-
-	public HttpRequestHandler(Socket socket) {
-		this.socket = socket;
-	}
-
-	// thread will execute this run method, which will call the processRequest
-	// method
-	@Override
-	public void run() {
-		try {
-			processRequest();
-		} catch (Exception e) {
-			System.err.println("Exception caught while processing request" + e);
-		}
-	}
-
 	// this method will be called from run to process the request
-	private void processRequest() throws IOException {
+	public ServerResponse processRequest(ServerRequest inRequest)
+			throws IOException {
 		try {
-			// obtain the input and output stream of the socket
-			InputStream inp = socket.getInputStream();
-			OutputStream op = socket.getOutputStream();
-
-			// parse the httprequest
-			if (!parseHttpRequest(inp)) {
-				System.err.println("Invalid http request parameters.");
-				response = new HttpResponse(null);
-
-				// send the response back to the client
-				sendResponse(response.formHttpResponse());
-			} else {
-
-				// if the request is valid, send the response back
-				File f = new File(HttpConstants.RESOURCE_DIR + request_uri);
-				response = new HttpResponse(f);
-
-				// added for testing purpose
-				/*
-				 * try { Thread.sleep(10000); } catch (InterruptedException e) {
-				 * // TODO Auto-generated catch block e.printStackTrace(); }
-				 */
-
-				sendResponse(response.formHttpResponse());
-			}
-			// closing the input and output streams
-			inp.close();
-			op.close();
+			// if the request is valid, send the response back
+			File outFile = new File(HttpConstants.RESOURCE_DIR
+					+ inRequest.request_uri);
+			ServerResponse response = new ServerResponse(outFile);
 		}
 
 		catch (IOException e) {
 			System.err.println("IOException caught" + e);
 		}
-		// closing the socket connection in finally.
-		finally {
-			// even the socket closing can throw IOException
-			try {
-				socket.close();
-			} catch (IOException e) {
-				System.err.println("Error in closing the socket connection" + e);
-			}
-		}
-
 	}
 
-	/* Function to parse the http request */
-	private boolean parseHttpRequest(InputStream inp) {
-		BufferedReader br = new BufferedReader(new InputStreamReader(inp));
-		try {
+	/* This function will form the http response - error or success */
+	public ServerResponse formHttpResponse(File outFile) {
+		ServerResponse response = new ServerResponse();
 
-			// read the first request line
-			String requestLine = br.readLine();
-			String requestLineContents[] = requestLine.split(" ");
-			if (requestLineContents.length != 3) {
-				System.err.println("Invalid number of parameters received in request line");
-				return false;
+		if (outFile == null) {
+			System.err
+					.println("Invalid HttpRequest, sending back error response");
+			String errorStr = "<html><body> Bad Protocol Request, Either Version or the Method not supported </body></html>";
+			response.setStatusCode(HttpStatusCodes.STATUS_400);
+			return sendHttpErrorResponse(response, errorStr);
+		} else {
+			if (outFile.isFile()) {
+				response.setStatusCode(HttpStatusCodes.STATUS_SUCCESS);
+				return sendHttpSuccessResponseWithFile(response, outFile);
 			} else {
-				method = requestLineContents[0];
-				request_uri = requestLineContents[1];
-				http_version = requestLineContents[2];
-
-				// proceed only if the valid values are received in the request
-				// line
-				if (!validateRequestLineContents(method, http_version)) {
-					System.err.println("Invalid parameters received in request line");
-					return false;
-				}
+				System.err.println("Invalid File name or location");
+				String errorStr = "<html><body>File " + outFile
+						+ " not found.</body></html>";
+				response.setStatusCode(HttpStatusCodes.STATUS_404);
+				return sendHttpErrorResponse(response, errorStr);
 			}
 
-			// read the headers now in the next lines.
-			// Get and display the header lines. Add the param name and value in
-			// the hashmap
-			String headerLine = null;
-			// System.out.println("Header Lines:");
-			while ((headerLine = br.readLine()).length() != 0) {
-				// System.out.println(headerLine);
-				String Parampair[] = headerLine.split(":");
-				headerParams.put(Parampair[0], Parampair[1]);
-			}
-
-			// Since it is a GET Request, so not using body contents.
-		} catch (IOException e) {
-			e.printStackTrace();
 		}
-		return true;
-
 	}
 
-	// this function will send the prepared response back to the client
-	public void sendResponse(HttpResponse response) {
-		String responseString = response.toString();
-		PrintWriter writer = null;
+	/*
+	 * Function which will form the response headers and body in case of an
+	 * error. ErrorStr passed as a param will become the error message or body
+	 * of the response
+	 */
+	private ServerResponse sendHttpErrorResponse(ServerResponse outResponse,
+			String errorStr) {
+		HashMap<String, String> responseHeaders = fillResponseHeader(
+				errorStr.getBytes().length, HttpConstants.HTML);
+		outResponse.setResponseHeaders(responseHeaders);
+		outResponse.setBody(errorStr.getBytes());
+
+		return outResponse;
+	}
+
+	/* Function to set the Date header in the header response map */
+	public HashMap<String, String> fillResponseHeader(long contentLength,
+			String contentType) {
+		HashMap<String, String> responseHeaders = new HashMap<>();
+
+		responseHeaders.put("Date", new Date().toString());
+		responseHeaders.put("Content-Length", String.valueOf(contentLength));
+		responseHeaders.put("Content-Type", contentType);
+
+		return responseHeaders;
+	}
+
+	/*Function which will form the response headers and body in case of an success.
+	 * The contents of the outFile passed as a parameter will be the body of the response*/
+	private ServerResponse sendHttpSuccessResponseWithFile(ServerResponse response, File outFile) {
 		try {
-			writer = new PrintWriter(socket.getOutputStream());
+			FileInputStream reader = new FileInputStream(outFile);
+			int contentLength = reader.available();
+			
+			//set the content type based on the file extension
+			String contentType = "";
+			if (outFile.getName().endsWith(".htm") || outFile.getName().endsWith(".html")) {
+				contentType = HttpConstants.HTML;
+			} else {
+				contentType = HttpConstants.TEXT;
+			}
+			
+			//fill the response headers.
+			HashMap<String, String> responseHeaders = fillResponseHeader(
+					contentLength, contentType);
+			response.setResponseHeaders(responseHeaders);
+			
+			// read the contents of the file in the body
+			byte[] body = new byte[contentLength];
+			reader.read(body);
+			
+			//set the body as well
+			response.setBody(body);
+			
+			reader.close();
 		} catch (IOException e) {
-			e.printStackTrace();
+			System.err.println("Exception caught while reading from file" + e);
 		}
-		writer.write(responseString);
-		writer.flush();
+		
+		return response;
 	}
 
-	// validate if the method was Get and HTTP version 1.1
-	private boolean validateRequestLineContents(String method, String http_version) {
-		if (method.equals(HttpConstants.HTTP_GET) && http_version.startsWith(HttpConstants.HTTP_Protocol_Version)) {
-			return true;
-		} else
-			return false;
-	}
 }

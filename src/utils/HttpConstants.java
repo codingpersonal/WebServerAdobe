@@ -7,4 +7,7 @@ public class HttpConstants {
 	public static final String RESOURCE_DIR = "resource_files";
 	public static final int HTTP_SERVER_PORT = 8080;
 	public static final int MAX_THREAD = 10;
+	public static final String HTTP_POST = "POST";
+	public static final String TEXT = "text/plain";
+	public static final String HTML = "text/html";
 }

@@ -1,6 +1,7 @@
 package server;
 import java.io.IOException;
 import java.net.ServerSocket;
+import java.net.Socket;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
@@ -13,10 +14,6 @@ public class Server implements Runnable {
 	private ExecutorService threadPoolSvc;
 	private ServerConfigurations serverConfig;
 	
-	public static void main(String[] args) throws IOException {
-//		new Thread(new Server()).start();
-	}
-
 	public Server(ServerConfigurations config) {
 		this.serverConfig = config;
 	}
@@ -31,21 +28,22 @@ public class Server implements Runnable {
 			threadPoolSvc = Executors.newFixedThreadPool(this.serverConfig.maxThreadCount);
 		} catch (IOException e) {
 			System.err.println("Cannot listen on port " + this.serverConfig.serverPort);
-			System.exit(1);
+			e.printStackTrace();
+			System.exit(10);			// some exception. ideally, it should exit gracefully
 		}
 		
 		System.out.println("Server Listening on port: "+ this.serverConfig.serverPort);
 		
 		//Loop until the main thread is not interupted
 		while (!Thread.interrupted()) {
+			// keep getting the requests on socket
+			Socket inReqSocket;
 			try {
-				// TODO: get the request handler from factory object
-				IServerRequestHandler reqHandler = this.serverConfig.handlerFactory.createRequestHandler();
-//				threadPoolSvc.execute(new HttpRequestHandler(serverSocket.accept()));
-				threadPoolSvc.execute(reqHandler);
+				inReqSocket = serverSocket.accept(); 					// blocking call
+				threadPoolSvc.execute(new ServerWorker(this.serverConfig.handlerFactory, inReqSocket));
 			} catch (IOException e) {
-				System.err.println("Cannot accept requests from client.");
-			}
+				e.printStackTrace();
+			}		
 		}
 		
 		//closing the server socket now
@@ -54,7 +52,7 @@ public class Server implements Runnable {
 		} catch (IOException e) {
 			e.printStackTrace();
 		}	
-		
+
 		threadPoolSvc.shutdown();
 		
 		//wait for 20 more seconds so that tasks which are in execution also get completed before termination

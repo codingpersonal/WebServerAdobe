@@ -1,5 +1,7 @@
 package request_handler;
 
-public interface IServerRequestHandler extends Runnable{
+import error_handling.ServerRequestException;
 
+public interface IServerRequestHandler {
+	public ServerResponse processRequest(ServerRequest inRequest) throws ServerRequestException;
 }
